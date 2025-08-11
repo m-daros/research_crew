@@ -8,13 +8,11 @@ from panel.chat import ChatInterface
 # If you want to run a snippet of code before or after the crew starts,
 # you can use the @before_kickoff and @after_kickoff decorators
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
-'''
 chat_interface = ChatInterface ()
 
 def print_output ( output: TaskOutput ):
     message = output.raw
     chat_interface.send ( message, user = output.agent, respond = False )
-'''
 
 
 @CrewBase
@@ -51,7 +49,7 @@ class ResearchCrew ():
     def research_task ( self ) -> Task:
         return Task (
                 config = self.tasks_config [ "research_task" ],  # type: ignore[index]
-                #callback = print_output
+                callback = print_output
         )
 
     @task
@@ -59,8 +57,8 @@ class ResearchCrew ():
         return Task (
                 config = self.tasks_config [ "reporting_task" ],  # type: ignore[index]
                 output_file = "report.md",
-                #callback = print_output,
-                #human_input = True
+                callback = print_output,
+                human_input = True
         )
 
     @crew

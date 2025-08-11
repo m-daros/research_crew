@@ -1,72 +1,79 @@
-#!/usr/bin/env python
-import sys
-import warnings
+import datetime
+import os
+from dotenv import load_dotenv
+import panel as pn
 
-from datetime import datetime
+load_dotenv ()
+
+pn.extension ( design="material" )
 
 from research_crew.crew import ResearchCrew
+from research_crew.crew import chat_interface
+import threading
 
-warnings.filterwarnings ( "ignore", category = SyntaxWarning, module = "pysbd" )
-
-
-# This main file is intended to be a way for you to run your
-# crew locally, so refrain from adding unnecessary logic into this file.
-# Replace with inputs you want to test with, it will automatically
-# interpolate any tasks and agents information
-
-def run ():
-    """
-    Run the crew.
-    """
-    inputs = {
-        'topic': 'AI LLMs',
-        'current_year': str ( datetime.now ().year )
-    }
-
-    try:
-        ResearchCrew ().crew ().kickoff ( inputs = inputs )
-    except Exception as e:
-        raise Exception ( f"An error occurred while running the crew: {e}" )
+from crewai.agents.agent_builder.base_agent_executor_mixin import CrewAgentExecutorMixin
+import time
 
 
-def train ():
-    """
-    Train the crew for a given number of iterations.
-    """
-    inputs = {
-        "topic": "AI LLMs",
-        'current_year': str ( datetime.now ().year )
-    }
+def custom_ask_human_input ( self, final_answer: dict ) -> str:
+    global user_input
 
-    try:
-        ResearchCrew ().crew ().train ( n_iterations = int ( sys.argv [1] ), filename = sys.argv [2], inputs = inputs )
+    chat_interface.send ( final_answer, user="Assistant", respond=False )
 
-    except Exception as e:
-        raise Exception ( f"An error occurred while training the crew: {e}" )
+    prompt = "Please provide feedback on the Final Result and the Agent's actions: "
+    chat_interface.send ( prompt, user="System", respond=False )
 
+    while user_input == None:
+        time.sleep ( 1 )
 
-def replay ():
-    """
-    Replay the crew execution from a specific task.
-    """
-    try:
-        ResearchCrew ().crew ().replay ( task_id = sys.argv [1] )
+    human_comments = user_input
+    user_input = None
 
-    except Exception as e:
-        raise Exception ( f"An error occurred while replaying the crew: {e}" )
+    return human_comments
 
 
-def test ():
-    """
-    Test the crew execution and returns the results.
-    """
-    inputs = {
-        "topic": "AI LLMs",
-        "current_year": str ( datetime.now ().year )
-    }
+CrewAgentExecutorMixin._ask_human_input = custom_ask_human_input
+
+user_input = None
+crew_started = False
+
+
+def initiate_chat ( message ):
+    global crew_started
+    crew_started = True
 
     try:
-        ResearchCrew ().crew ().test ( n_iterations = int ( sys.argv [1] ), eval_llm = sys.argv [2], inputs = inputs )
+        # Initialize crew with inputs
+        inputs = { "topic": message, "current_year": datetime.datetime.now ().year }
+        crew = ResearchCrew ().crew ()
+        result = crew.kickoff ( inputs=inputs )
 
+        # Send results back to chat
     except Exception as e:
-        raise Exception ( f"An error occurred while testing the crew: {e}" )
+        chat_interface.send ( f"An error occurred: {e}", user="Assistant", respond=False )
+
+    crew_started = False
+
+
+def callback ( contents: str, user: str, instance: pn.chat.ChatInterface ):
+    global crew_started
+    global user_input
+
+    if not crew_started:
+        thread = threading.Thread ( target=initiate_chat, args=(contents,) )
+        thread.start ()
+    else:
+        user_input = contents
+
+
+chat_interface.callback = callback
+
+# Send welcome message
+chat_interface.send (
+        "Welcome! I'm your AI Research Assistant. What topic would you like me to research?",
+        user = "Assistant",
+        respond = False
+)
+
+# Make it servable
+chat_interface.servable ()
