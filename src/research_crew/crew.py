@@ -5,6 +5,8 @@ from typing import List
 
 from panel.chat import ChatInterface
 
+from research_crew.tools.tools import search_tool
+
 # If you want to run a snippet of code before or after the crew starts,
 # you can use the @before_kickoff and @after_kickoff decorators
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
@@ -19,8 +21,8 @@ def print_output ( output: TaskOutput ):
 class ResearchCrew ():
     """ResearchCrew crew"""
 
-    agents: List [BaseAgent]
-    tasks: List [Task]
+    agents: List [ BaseAgent ]
+    tasks: List [ Task ]
 
     # Learn more about YAML configuration files here:
     # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
@@ -29,16 +31,24 @@ class ResearchCrew ():
     # If you would like to add tools to your agents, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
-    def researcher ( self ) -> Agent:
+    def research_planner ( self ) -> Agent:
         return Agent (
-                config = self.agents_config [ "researcher" ],  # type: ignore[index]
+                config = self.agents_config [ "research_planner" ],  # type: ignore[index]
                 verbose = True
         )
 
     @agent
-    def reporting_analyst ( self ) -> Agent:
+    def research_assistant ( self ) -> Agent:
         return Agent (
-                config = self.agents_config [ "reporting_analyst" ],  # type: ignore[index]
+                config = self.agents_config [ "research_assistant" ],  # type: ignore[index]
+                verbose = True
+        )
+
+
+    @agent
+    def writer ( self ) -> Agent:
+        return Agent (
+                config = self.agents_config [ "writer" ],  # type: ignore[index]
                 verbose = True
         )
 
@@ -46,17 +56,24 @@ class ResearchCrew ():
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
     @task
-    def research_task ( self ) -> Task:
+    def plan_task ( self ) -> Task:
         return Task (
-                config = self.tasks_config [ "research_task" ],  # type: ignore[index]
+                config = self.tasks_config [ "plan_task" ],  # type: ignore[index]
                 callback = print_output
         )
 
     @task
-    def reporting_task ( self ) -> Task:
+    def research_task ( self ) -> Task:
         return Task (
-                config = self.tasks_config [ "reporting_task" ],  # type: ignore[index]
-                output_file = "report.md",
+                config = self.tasks_config [ "research_task" ],  # type: ignore[index]
+                tools = [ search_tool ],
+                callback = print_output
+        )
+
+    @task
+    def writing_task ( self ) -> Task:
+        return Task (
+                config = self.tasks_config [ "writing_task" ],  # type: ignore[index]
                 callback = print_output,
                 human_input = True
         )

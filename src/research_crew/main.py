@@ -44,7 +44,7 @@ def initiate_chat ( message ):
 
     try:
         # Initialize crew with inputs
-        inputs = { "topic": message, "current_year": datetime.datetime.now ().year }
+        inputs = { "topic": message, "current_year": datetime.datetime.now ().year, "num_searches": 10 }
         crew = ResearchCrew ().crew ()
         result = crew.kickoff ( inputs=inputs )
 
