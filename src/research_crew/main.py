@@ -5,7 +5,7 @@ import panel as pn
 
 load_dotenv ()
 
-pn.extension ( design="material" )
+pn.extension ( design = "material" )
 
 from research_crew.crew import ResearchCrew
 from research_crew.crew import chat_interface
@@ -18,10 +18,10 @@ import time
 def custom_ask_human_input ( self, final_answer: dict ) -> str:
     global user_input
 
-    chat_interface.send ( final_answer, user="Assistant", respond=False )
+    chat_interface.send ( final_answer, user = "Assistant", respond=False )
 
     prompt = "Please provide feedback on the Final Result and the Agent's actions: "
-    chat_interface.send ( prompt, user="System", respond=False )
+    chat_interface.send ( prompt, user = "System", respond = False )
 
     while user_input == None:
         time.sleep ( 1 )
@@ -44,7 +44,11 @@ def initiate_chat ( message ):
 
     try:
         # Initialize crew with inputs
-        inputs = { "topic": message, "current_year": datetime.datetime.now ().year, "num_searches": 10 }
+        num_searches = os.getenv ( "NUM_SEARCHES" )
+
+        print ( f"Num searches: {num_searches}" )
+
+        inputs = { "topic": message, "current_year": datetime.datetime.now ().year, "num_searches": num_searches }
         crew = ResearchCrew ().crew ()
         result = crew.kickoff ( inputs=inputs )
 
